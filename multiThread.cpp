@@ -17,6 +17,9 @@ int main() {
     wordCount = new int[THREAD_NUMBER];
 
     clock_gettime(CLOCK_MONOTONIC, &tstart);
+    double cpuUsage;
+    CpuUtilization *cpuUtil = new CpuUtilization();
+    cpuUtil->init();
 
     fp = fopen("../test.txt", "r");
 
@@ -31,10 +34,6 @@ int main() {
 
     if (result != fileSize) {fputs ("Reading error",stderr); exit (1);}
     fclose(fp);
-
-    double cpuUsage;
-    CpuUtilization *cpuUtil = new CpuUtilization();
-    cpuUtil->init();
 
     long eachSecSize = fileSize / THREAD_NUMBER;
     for (int i = 0; i < THREAD_NUMBER-1; ++i) {
@@ -54,7 +53,6 @@ int main() {
 
     cout << "time(sec): " << ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -
                              ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec) << endl;
-
     cout << "Cpu Usage: " << cpuUsage << endl;
 
     free(buffer);

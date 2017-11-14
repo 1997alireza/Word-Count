@@ -1,5 +1,4 @@
 #include <iostream>
-#include <thread>
 #include <malloc.h>
 #include "usageDeterminer/cpuUtilization.h"
 
@@ -14,6 +13,9 @@ int main() {
     struct timespec tstart={0,0}, tend={0,0};
 
     clock_gettime(CLOCK_MONOTONIC, &tstart);
+    double cpuUsage;
+    CpuUtilization *cpuUtil = new CpuUtilization();
+    cpuUtil->init();
 
     fp = fopen("../test.txt", "r");
     fseek(fp, 0L, SEEK_END);
@@ -27,10 +29,6 @@ int main() {
 
     if (result != fileSize) {fputs ("Reading error",stderr); exit (1);}
     fclose(fp);
-
-    double cpuUsage;
-    CpuUtilization *cpuUtil = new CpuUtilization();
-    cpuUtil->init();
 
     if(fp){
         for(long i = 0; i <= fileSize; i++){
@@ -50,7 +48,6 @@ int main() {
 
     cout << "time(sec): " << ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -
                              ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec) << endl;
-
     cout << "Cpu Usage: " << cpuUsage << endl;
     return 0;
 }
