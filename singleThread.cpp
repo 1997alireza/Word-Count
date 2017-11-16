@@ -1,19 +1,21 @@
 #include <iostream>
 #include <malloc.h>
+#include <thread>
 #include "usageDeterminer/cpuUtilization.h"
-
+#include "usageDeterminer/memoryUtilization.h"
 using namespace std;
 
 char * buffer;
 
-int main() {
-
+int main()
+{
     FILE *fp;
     int wordCount = 0;
     struct timespec tstart={0,0}, tend={0,0};
 
     clock_gettime(CLOCK_MONOTONIC, &tstart);
     double cpuUsage;
+    int memUsage;
     CpuUtilization *cpuUtil = new CpuUtilization();
     cpuUtil->init();
 
@@ -30,14 +32,19 @@ int main() {
     if (result != fileSize) {fputs ("Reading error",stderr); exit (1);}
     fclose(fp);
 
-    if(fp){
-        for(long i = 0; i <= fileSize; i++){
+    if(fp)
+    {
+        for(long i = 0; i <= fileSize; i++)
+        {
             char ch = buffer[i];
             if (ch == ' ' || ch == '\n')  ++wordCount;
         }
         cpuUsage = cpuUtil->getCurrentValue();
+        MemoryUtilization *mm = new MemoryUtilization();
+        memUsage = mm->getCurrentlyUsedRAM();
     }
-    else {
+    else
+    {
         cout << "Failed!" << endl;
         exit(1);
     }
@@ -45,9 +52,10 @@ int main() {
 
     cout << wordCount << endl;
 
-
     cout << "time(sec): " << ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -
                              ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec) << endl;
     cout << "Cpu Usage: " << cpuUsage << endl;
+    cout << "RAM Usage: " << memUsage << endl;
+
     return 0;
 }

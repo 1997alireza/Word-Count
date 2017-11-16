@@ -1,12 +1,16 @@
+#if defined unix || __unix__ || __unix || linux || __linux__ || __linux
+#define LINUX
+#endif
 #include <iostream>
 #include "usageDeterminer/cpuUtilization.h"
+#include "usageDeterminer/memoryUtilization.h"
 using namespace std;
-//#define LINUX unix || __unix__ || __unix || linux || __linux__ || __linux
 #ifdef  _WIN32
-#include <windows.h>
 #include <malloc.h>
+#include <thread>
+#include <windows.h>
 LPCSTR count(short process_number, long start_byte, long end_byte);
-#elif defined unix || __unix__ || __unix || linux || __linux__ || __linux
+#elif defined LINUX
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
@@ -16,13 +20,15 @@ void count(short process_number, long start_byte, long end_byte);
 char * buffer;
 int* wordCount;
 
-int main() {
-    const short PROCESS_NUMBER = 4;
+int main()
+{
+    const short PROCESS_NUMBER = 8;
     FILE *fp;
     struct timespec tstart={0,0}, tend={0,0};
 
     clock_gettime(CLOCK_MONOTONIC, &tstart);
     double cpuUsage;
+    int memUsage;
     CpuUtilization *cpuUtil = new CpuUtilization();
     cpuUtil->init();
 
@@ -34,7 +40,7 @@ int main() {
     ZeroMemory( &si, sizeof(si) );
     si.cb = sizeof(si);
     ZeroMemory( &pi, sizeof(pi) );
-#elif defined unix || __unix__ || __unix || linux || __linux__ || __linux
+#elif defined LINUX
     __pid_t pid[PROCESS_NUMBER];
 #endif
 
@@ -46,7 +52,7 @@ int main() {
 #ifdef _WIN32
     wordCount = new int[PROCESS_NUMBER];
     buffer = (char*) malloc (sizeof(char)*fileSize);
-#elif defined unix || __unix__ || __unix || linux || __linux__ || __linux
+#elif defined LINUX
     buffer = static_cast<char *>(mmap(NULL, sizeof(char) * fileSize , PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS , -1, 0));
     wordCount = static_cast<int *>(mmap(NULL, sizeof(int) * PROCESS_NUMBER , PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS , -1, 0));
 #endif
@@ -58,12 +64,13 @@ int main() {
     fclose(fp);
 
     long eachSecSize = fileSize / PROCESS_NUMBER;
-    for (short i = 0; i < PROCESS_NUMBER; ++i) {
+    for (short i = 0; i < PROCESS_NUMBER; ++i)
+    {
         long end_byte = (i == PROCESS_NUMBER-1) ?  fileSize-1 : eachSecSize * (i+1) - 1;
 #ifdef _WIN32
         p[i] = (HANDLE) CreateProcess(count(i, eachSecSize * i, end_byte), NULL, NULL, NULL, FALSE, 0,
                                       NULL, NULL, &si, &pi);
-#elif defined unix || __unix__ || __unix || linux || __linux__ || __linux
+#elif defined LINUX
         __pid_t id = fork();
         if(id == 0){ // child process
             count(i, eachSecSize * i, end_byte);
@@ -72,7 +79,8 @@ int main() {
         else if (id > 0){ // parent process
             pid[i] = id;
         }
-        else { // error on creating child process
+        else
+        { // error on creating child process
             fputs ("Creating process error",stderr);
             exit (1);
         }
@@ -80,15 +88,18 @@ int main() {
     }
 
     int wordcount = 0;
-    for (int i = 0; i < PROCESS_NUMBER; ++i) {
+    for (int i = 0; i < PROCESS_NUMBER; ++i)
+    {
 #ifdef _WIN32
         WaitForSingleObject(p[i], INFINITE);
-#elif defined unix || __unix__ || __unix || linux || __linux__ || __linux
+#elif defined LINUX
         waitpid(pid[i], 0, 0);
 #endif
         wordcount += wordCount[i];
     }
     cpuUsage = cpuUtil->getCurrentValue();
+    MemoryUtilization *mm = new MemoryUtilization();
+    memUsage = mm->getCurrentlyUsedRAM();
     clock_gettime(CLOCK_MONOTONIC, &tend);
 
     cout << wordcount << endl;
@@ -96,6 +107,7 @@ int main() {
     cout << "time(sec): " << ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) -
                              ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec) << endl;
     cout << "Cpu Usage: " << cpuUsage << endl;
+    cout << "RAM Usage: " << memUsage << endl;
 
     free(buffer);
 #ifdef _WIN32
@@ -106,7 +118,8 @@ int main() {
 }
 
 #ifdef _WIN32
-LPCSTR count(short process_number, long start_byte, long end_byte){
+LPCSTR count(short process_number, long start_byte, long end_byte)
+{
     int wordcount = 0;
     char ch;
     for(long i = start_byte; i <= end_byte; i++){
@@ -118,11 +131,13 @@ LPCSTR count(short process_number, long start_byte, long end_byte){
 
     return 0;
 };
-#elif defined unix || __unix__ || __unix || linux || __linux__ || __linux
-void count(short process_number, long start_byte, long end_byte){
+#elif defined LINUX
+void count(short process_number, long start_byte, long end_byte)
+{
     int wordcount = 0;
     char ch;
-    for(long i = start_byte; i <= end_byte; i++){
+    for(long i = start_byte; i <= end_byte; i++)
+    {
         ch = buffer[i];
         if (ch == ' ' || ch == '\n')  ++wordcount;
     }

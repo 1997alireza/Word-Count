@@ -1,11 +1,18 @@
+#if defined unix || __unix__ || __unix || linux || __linux__ || __linux
+#define LINUX
+#endif
 #include "cpuUtilization.h"
-#ifdef  _WIN32
+#ifdef _WIN32
 #include "windows.h"
-#elif unix || __unix__ || __unix || linux || __linux__ || __linux
+static ULARGE_INTEGER lastCPU, lastSysCPU, lastUserCPU;
+static HANDLE self;
+#elif defined LINUX
 #include <cstdio>
 #include <cstring>
-
+#include <sys/times.h>
+static clock_t lastCPU, lastSysCPU, lastUserCPU;
 #endif
+static int numProcessors;
 
 void CpuUtilization::init()
 {
@@ -25,7 +32,7 @@ void CpuUtilization::init()
     memcpy(&lastSysCPU, &fsys, sizeof(FILETIME));
     memcpy(&lastUserCPU, &fuser, sizeof(FILETIME));
 
-#elif defined unix || __unix__ || __unix || linux || __linux__ || __linux
+#elif defined LINUX
 
     FILE* file;
     struct tms timeSample;
@@ -70,7 +77,7 @@ double CpuUtilization::getCurrentValue()
 
     return percent * 100;
 
-#elif defined unix || __unix__ || __unix || linux || __linux__ || __linux
+#elif defined LINUX
     struct tms timeSample;
     clock_t now;
     double percent;
