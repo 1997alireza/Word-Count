@@ -23,7 +23,7 @@ int MemoryUtilization::getCurrentlyUsedRAM(){
 #ifdef _WIN32
     PROCESS_MEMORY_COUNTERS pmc;
     GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
-    return (int)pmc.WorkingSetSize;
+    return (int)(pmc.WorkingSetSize / 1000);
 #elif defined LINUX
     FILE* file = fopen("/proc/self/status", "r");
     int result = -1;
